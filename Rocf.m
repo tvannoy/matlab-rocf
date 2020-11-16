@@ -7,15 +7,34 @@ classdef Rocf < handle
 %   but it's main intent is outlier detection. 
 %
 %   Rocf constructor:
-%       rocf = ROCF(X, k)
+%       rocf = ROCF(X, k, indexNeighbors) creates an ROCF object for input
+%       data X, with k nearest neighbors used in constructing the mutual knn
+%       graph. indexNeighbors is the number of neighbors used to build the
+%       k-nearest neighbors index. indexNeighbors must be >= k + 1
+%
+%       rocf = Rocf(X, k, indexNeighbors, 'Method', method) creates an Rocf
+%       object for input data X, with k nearest neighbors used in constructing
+%       the mutual knn graph, using the specified knn method.
+%
+%       Optional parameters:
+%       'Method'        - The method to use when building the knn index
+%           "knnsearch" - Use KNNSEARCH from Mathwork's Statistics and
+%                         Machine Learning Toolbox. This is the default
+%                         method. 
+%           "nndescent" - Use the nearest neighbor descent algorithm to
+%                         build an approximate knn index. For large
+%                         matrices, this is much faster than KNNSEARCH, at
+%                         the cost of slightly less accuracy. This method
+%                         requires the pynndescent python package to be
+%                         installed and accessible through MATLAB's Python
+%                         external language interface
 %
 %   Rows of X correspond to observations, and columns correspond to variables.
-%   k is the number of nearest neighbors to use when constructing the mutual 
-%   k-nearest neighbor graph.
 %
 %   Rocf properties:
-%       Data             - input data X 
 %       K                - number of nearest neighbors 
+%       Data             - input data X 
+%       KnnIndex         - k-nearest neighbor index
 %       MutualKnnGraph   - mutual knn graph used for clustering
 %       Clusters         - Clusters{i} contains indices for points in cluster i
 %       OutlierClusters  - same as Clusters, but for outlier clusters
@@ -30,12 +49,19 @@ classdef Rocf < handle
 %   This algorithm was presented in http://dx.doi.org/10.1016/j.knosys.2017.01.013
 %   by Jinlong Huang et al., but no implementation was given, so this 
 %   implementation is based upon the algorithm descriptions given in the paper.
+%
+%   See also KNNINDEX, MUTUALKNNGRAPH
+
+    properties (SetAccess = public, AbortSet)
+        % Number of nearest neighbors used to construct the knn graph
+        K (1,1) double {mustBePositive, mustBeInteger} = 1
+    end
 
     properties (SetAccess = private)
         % Input data; rows are observations, and columns are variables
         Data (:,:) double
-        % Number of nearest neighbors used to construct the mutual knn graph
-        K (1,1) double {mustBePositive, mustBeInteger} = 1
+        % k-nearest neighbor index
+        KnnIndex (:,:) double
         % Mutual knn graph used for clustering (connected components are clusters)
         MutualKnnGraph (1,1) graph
         % Cell array of clusters; Clusters{i} contains indices for all points
@@ -53,7 +79,7 @@ classdef Rocf < handle
         OutlierRate (1,1) double
         % Cluster labels. Isolated outliers have a label value of -1; all other 
         % clusters have labels starting at 1
-        Labels (:,1) double {mustBeInteger} = []
+        Labels (:,1) int32 {mustBeInteger} = []
     end
     
     properties (Constant)
@@ -64,14 +90,53 @@ classdef Rocf < handle
     end
 
     methods(Access = public)
-        function obj = Rocf(X, k)
+        function obj = Rocf(X, k, indexNeighbors, options)
         %ROCF Construct an ROCF object
-        %   rocf = ROCF(X, k) creates an ROCF object for input data X, with k 
-        %   nearest neighbors used in constructing the mutual knn graph.
+        %   rocf = ROCF(X, k, indexNeighbors) creates an ROCF object for input
+        %   data X, with k nearest neighbors used in constructing the mutual knn
+        %   graph. indexNeighbors is the number of neighbors used to build the
+        %   k-nearest neighbors index. indexNeighbors must be >= k + 1
+        %
+        %   rocf = Rocf(X, k, indexNeighbors, 'Method', method) creates an Rocf
+        %   object for input data X, with k nearest neighbors used in
+        %   constructing the mutual knn graph, using the specified knn method.
+        %
+        %   Optional parameters:
+        %   'Method'        - The method to use when building the knn index
+        %       "knnsearch" - Use KNNSEARCH from Mathwork's Statistics and
+        %                     Machine Learning Toolbox. This is the default
+        %                     method. 
+        %       "nndescent" - Use the nearest neighbor descent algorithm to
+        %                     build an approximate knn index. For large
+        %                     matrices, this is much faster than KNNSEARCH, at
+        %                     the cost of slightly less accuracy. This method
+        %                     requires the pynndescent python package to be
+        %                     installed and accessible through MATLAB's Python
+        %                     external language interface
+
+            arguments
+                X (:,:) double
+                k (1, 1) {mustBePositive, mustBeInteger}
+                indexNeighbors (1,1) {mustBePositive, mustBeInteger}
+                options.Method (1,1) string {mustBeMember(options.Method, ["knnsearch", "nndescent"])} = "knnsearch"
+            end
+
+            if indexNeighbors < k + 1
+                error("indexNeighbors must be >= k + 1")
+            end
 
             obj.Data = X;
-            obj.K = k;
             obj.Labels = zeros(size(X,1), 1);
+            obj.KnnIndex = knnindex(obj.Data, indexNeighbors, ...
+                'Method', options.Method);
+            obj.K = k;
+
+            % the setter for k won't execute for k = 1 because 1 is the
+            % default value for k, so AbortSet will stop set.K from running
+            if k == 1
+                obj.MutualKnnGraph = mutualknngraph(obj.KnnIndex, obj.K, ...
+                    'Precomputed', true);
+            end
         end
 
         function cluster(obj)
@@ -90,6 +155,21 @@ classdef Rocf < handle
             obj.detectOutlierClusters();
             obj.computeOutlierRate();
             obj.setLabels();
+        end
+    end
+
+    methods
+        function obj = set.K(obj, k)
+            % this method only gets called if k != obj.K, due to AbortSet
+            if k >= size(obj.KnnIndex, 2)
+                error("Error setting property 'K' of  class 'RnnDbsan':\n" + ...
+                    "'K' must be less than knn index size %d", ...
+                    size(obj.KnnIndex, 2));
+            end
+
+            obj.K = k;
+            obj.MutualKnnGraph = mutualknngraph(obj.KnnIndex, obj.K, ...
+                'Precomputed', true);
         end
     end
 
