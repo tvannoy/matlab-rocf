@@ -79,7 +79,7 @@ classdef Rocf < handle
         OutlierRate (1,1) double
         % Cluster labels. Isolated outliers have a label value of -1; all other 
         % clusters have labels starting at 1
-        Labels (:,1) int32 {mustBeInteger} = []
+        Labels (:,1) int32 = []
     end
     
     properties (Constant)
@@ -126,7 +126,7 @@ classdef Rocf < handle
             end
 
             obj.Data = X;
-            obj.Labels = zeros(size(X,1), 1);
+            obj.Labels = int32(zeros(size(X,1), 1));
             obj.KnnIndex = knnindex(obj.Data, indexNeighbors, ...
                 'Method', options.Method);
             obj.K = k;
@@ -181,15 +181,13 @@ classdef Rocf < handle
         %
         % This corresponds to the RoughlyCluster algorithm in the original paper
 
-            obj.MutualKnnGraph = mutualknngraph(obj.Data, obj.K);
-
             % The clusters are represented by the connected components
             % of the mutual knn graph. This is not how the paper describes
             % the "RoughlyCluster" algorithm, but this graph interpretation
             % is much simpler to implement. 'OutputForm' = 'cell' returns a 
             % cell array where the i-th cell contains all of the node IDs 
             % belonging to component i. 
-            obj.Clusters = obj.MutualKnnGraph.conncomp('OutputForm', 'cell');
+            obj.Clusters = conncomp(obj.MutualKnnGraph, 'OutputForm', 'cell');
 
             obj.sortClustersBySize();
         end
@@ -293,10 +291,10 @@ classdef Rocf < handle
         % All other clusters have labels starting from 1, where cluster 1
         % is the smallest cluster.
 
-            obj.Labels(obj.IsolatedOutliers) = -1;
+            obj.Labels(obj.IsolatedOutliers) = int32(-1);
 
             for i = 1:length(obj.Clusters)
-                obj.Labels(obj.Clusters{i}) = i;
+                obj.Labels(obj.Clusters{i}) = int32(i);
             end
         end
     end
