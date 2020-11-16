@@ -1,4 +1,4 @@
-classdef Rocf < handle
+classdef Rocf < matlab.mixin.Copyable
 %Rocf Cluster-based outlier detection 
 %   ROCF (Relative Outlier Cluster Factor) detects isolated outliers and
 %   outlier clusters based upon a mutual k-nearest neighbor graph and the idea
