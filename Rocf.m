@@ -1,4 +1,4 @@
-classdef Rocf < matlab.mixin.Copyable
+classdef Rocf < handle
 %Rocf Cluster-based outlier detection 
 %   ROCF (Relative Outlier Cluster Factor) detects isolated outliers and
 %   outlier clusters based upon a mutual k-nearest neighbor graph and the idea
@@ -90,14 +90,19 @@ classdef Rocf < matlab.mixin.Copyable
     end
 
     methods(Access = public)
-        function obj = Rocf(X, k, indexNeighbors, options)
+        function obj = Rocf(X, k, index, options)
         %ROCF Construct an ROCF object
-        %   rocf = ROCF(X, k, indexNeighbors) creates an ROCF object for input
+        %   rocf = ROCF(X, k, nIndexNeighbors) creates an ROCF object for input
         %   data X, with k nearest neighbors used in constructing the mutual knn
         %   graph. indexNeighbors is the number of neighbors used to build the
         %   k-nearest neighbors index. indexNeighbors must be >= k + 1
         %
-        %   rocf = Rocf(X, k, indexNeighbors, 'Method', method) creates an Rocf
+	%
+        %   rocf = rocf(X, k, knnIndex) creates an ROCF object
+        %   using a precomputed knn index, knnIndex. knnIndex must have the same
+        %   number of rows as X.
+	%
+        %   rocf = Rocf(X, k, nIndexNeighbors, 'Method', method) creates an Rocf
         %   object for input data X, with k nearest neighbors used in
         %   constructing the mutual knn graph, using the specified knn method.
         %
@@ -117,18 +122,32 @@ classdef Rocf < matlab.mixin.Copyable
             arguments
                 X (:,:) double
                 k (1, 1) {mustBePositive, mustBeInteger}
-                indexNeighbors (1,1) {mustBePositive, mustBeInteger}
+                index
                 options.Method (1,1) string {mustBeMember(options.Method, ["knnsearch", "nndescent"])} = "knnsearch"
             end
 
-            if indexNeighbors < k + 1
-                error("indexNeighbors must be >= k + 1")
-            end
-
             obj.Data = X;
-            obj.Labels = int32(zeros(size(X,1), 1));
-            obj.KnnIndex = knnindex(obj.Data, indexNeighbors, ...
-                'Method', options.Method);
+
+	    if numel(index) == 1
+               indexNeighbors = index;
+
+                if indexNeighbors < k + 1
+                    error("indexNeighbors must be >= k + 1")
+                end
+
+               obj.KnnIndex = knnindex(obj.Data, indexNeighbors, ...
+                   'Method', options.Method);
+            elseif size(index, 1) == size(X, 1)
+                if size(index, 2) < k + 1
+                    error("knnIndex must have # columns >= k + 1")
+                end
+                obj.KnnIndex = index;
+	    else
+		% TODO: better error message
+		error("argument 3 is incorrect")
+	    end
+
+            obj.Labels = zeros(size(X,1), 1, 'int32');
             obj.K = k;
 
             % the setter for k won't execute for k = 1 because 1 is the
