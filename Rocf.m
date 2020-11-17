@@ -61,7 +61,7 @@ classdef Rocf < matlab.mixin.Copyable
         % Input data; rows are observations, and columns are variables
         Data (:,:) double
         % k-nearest neighbor index
-        KnnIndex (:,:) double
+        KnnIndex (:,:) int32
         % Mutual knn graph used for clustering (connected components are clusters)
         MutualKnnGraph (1,1) graph
         % Cell array of clusters; Clusters{i} contains indices for all points
@@ -71,10 +71,10 @@ classdef Rocf < matlab.mixin.Copyable
         % are also included in Clusters
         OutlierClusters (:,1) cell
         % Outliers that do not belong to any cluster
-        IsolatedOutliers (1,:) double
+        IsolatedOutliers (1,:) int32
         % ROCF values for each clusters; the ROCF value is a measure of how big 
         % the next largest cluster is compared to the current cluster
-        RocfValues
+        RocfValues (1,:) double
         % Percentage of outliers in the data
         OutlierRate (1,1) double
         % Cluster labels. Isolated outliers have a label value of -1; all other 
@@ -188,6 +188,7 @@ classdef Rocf < matlab.mixin.Copyable
             % cell array where the i-th cell contains all of the node IDs 
             % belonging to component i. 
             obj.Clusters = conncomp(obj.MutualKnnGraph, 'OutputForm', 'cell');
+	    obj.Clusters = cellfun(@(c) int32(c), obj.Clusters, 'UniformOutput', false);
 
             obj.sortClustersBySize();
         end
@@ -220,10 +221,10 @@ classdef Rocf < matlab.mixin.Copyable
 
             % compute the sizes of each cluster, then sort these sizes
             % and return the cluster indices in order of sorted cluster sizes
-            [~, sort_idx] = sort(cellfun('length', obj.Clusters));
+            [~, sortIdx] = sort(cellfun('length', obj.Clusters));
 
             % sort/rearrange the clusters
-            obj.Clusters = obj.Clusters(sort_idx);
+            obj.Clusters = obj.Clusters(sortIdx);
         end
 
         function detectIsolatedOutliers(obj)
