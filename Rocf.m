@@ -52,7 +52,7 @@ classdef Rocf < handle
 %
 %   See also KNNINDEX, MUTUALKNNGRAPH
 
-% SPDX-License-Identifier: MIT
+% SPDX-License-Identifier: 3-Clause-BSD
 % Copyright (c) 2020 Trevor Vannoy
 
     properties (SetAccess = public, AbortSet)
