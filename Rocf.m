@@ -50,7 +50,7 @@ classdef Rocf < handle
 %   by Jinlong Huang et al., but no implementation was given, so this 
 %   implementation is based upon the algorithm descriptions given in the paper.
 %
-%   See also KNNINDEX, MUTUALKNNGRAPH
+%   See also knnindex, mutualknngraph
 
 % SPDX-License-Identifier: BSD-3-Clause 
 % Copyright (c) 2020 Trevor Vannoy
