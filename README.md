@@ -11,6 +11,17 @@ To run the tests contained in the Jupyter notebook, you will need to install the
 
 To use the NN Descent algorithm to construct the mutual KNN graph used by ROCF, you need [pynndescent](https://github.com/lmcinnes/pynndescent) and [MATLAB's Python language interface](https://www.mathworks.com/help/matlab/call-python-libraries.html). I recommend using Conda to set up an environment, as MATLAB is picky about which Python versions it supports. 
 
+## Installation
+### Install with [mpm](https://github.com/mobeets/mpm):
+```
+mpm install knn-graphs
+mpm install rocf
+```
+### Manual installation
+- Download [knn-graphs](https://www.mathworks.com/matlabcentral/fileexchange/97919-knn-graphs) from the MATLAB File Exchange
+- Download matlab-rocf from the MATLAB File Exchange or from the latest GitHub release
+- Add both packages to your MATLAB path
+
 ## Usage
 `Rocf` is a class with a single public method, `cluster`. The results of the clustering operation are stored in read-only public properties. `Rocf` is an iceberg class, which, depending on who you ask, is either [bad](https://www.artima.com/weblogs/viewpost.jsp?thread=125574) or [good](https://calebhearth.com/iceberg-classes)...
 
