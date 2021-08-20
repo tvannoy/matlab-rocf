@@ -1,4 +1,6 @@
 # matlab-rocf
+[![View ROCF (Relative Outlier Cluster Factor) on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/97929-rocf-relative-outlier-cluster-factor)
+
 This repo contains a MATLAB implementation of the [ROCF (Relative Outlier Cluster Factor) clustering algorithm by Jinlong Huang et al.](https://doi.org/10.1016/j.knosys.2017.01.013).
 
 ROCF (Relative Outlier Cluster Factor) detects isolated outliers and outlier clusters based upon a mutual k-nearest neighbor graph and the idea that outlier clusters are much smaller in size than normal clusters.  It also detects normal clusters in addition to outlier clusters, but it's main intent is outlier detection. For more details, see the original [paper](https://doi.org/10.1016/j.knosys.2017.01.013).
@@ -19,7 +21,7 @@ mpm install rocf
 ```
 ### Manual installation
 - Download [knn-graphs](https://www.mathworks.com/matlabcentral/fileexchange/97919-knn-graphs) from the MATLAB File Exchange
-- Download matlab-rocf from the MATLAB File Exchange or from the latest GitHub release
+- Download matlab-rocf from the [MATLAB File Exchange](https://www.mathworks.com/matlabcentral/fileexchange/97929-rocf-relative-outlier-cluster-factor) or from the latest GitHub release
 - Add both packages to your MATLAB path
 
 ## Usage
